@@ -19,7 +19,7 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft JhengHei", sans-serif;
         }
 
         body {
@@ -45,6 +45,12 @@
             flex-shrink: 0;
         }
 
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
         .time-display {
             font-size: 1.8rem;
             font-weight: bold;
@@ -58,14 +64,24 @@
             margin-left: 8px;
         }
 
-        .btn-refresh {
-            background: #ffeb3b;
+        .btn-action {
             border: none;
-            padding: 6px 12px;
+            padding: 6px 14px;
             border-radius: 16px;
             font-weight: bold;
             font-size: 0.85rem;
             cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-refresh {
+            background: #ffeb3b;
+            color: #333;
+        }
+
+        .btn-lang {
+            background: #0288d1;
+            color: #ffffff;
         }
 
         .dashboard-grid {
@@ -215,44 +231,50 @@
             <span class="time-display" id="clock">--:--:--</span>
             <span class="date-display" id="date-str">--/--</span>
         </div>
-        <button class="btn-refresh" onclick="fetchData()">🔄 Refresh (30s)</button>
+        <div class="header-actions">
+            <button class="btn-action btn-lang" onclick="toggleLanguage()" id="lang-btn">中文</button>
+            <button class="btn-action btn-refresh" onclick="fetchData()" id="refresh-btn">🔄 Refresh (30s)</button>
+        </div>
     </header>
 
     <div class="dashboard-grid">
         <div style="display: flex; flex-direction: column; gap: 8px; height: 100%;">
+            <!-- 天氣卡片 -->
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title">☀️ Tuen Mun Weather</div>
+                    <div class="card-title" id="weather-title">☀️ Tuen Mun Weather</div>
                     <span class="tag" style="background:#ffe4e8; color:#d81b60;">HKO Live</span>
                 </div>
                 <div class="weather-main">
                     <div>
-                        <h2 style="font-size: 1rem;">Tuen Mun</h2>
+                        <h2 style="font-size: 1rem;" id="weather-loc">Tuen Mun</h2>
                         <p style="color: var(--text-gray); font-size: 0.78rem;" id="weather-desc">Loading...</p>
                     </div>
                     <div class="temp-large" id="tuen-mun-temp">--°</div>
                 </div>
                 <div class="weather-details">
-                    <div style="font-size:0.78rem;">💧 Humidity: <span id="humidity" style="font-weight:bold;">--%</span></div>
-                    <div style="font-size:0.78rem;">☔ Rain Prob: <span style="font-weight:bold; color:#e91e63;">Med</span></div>
+                    <div style="font-size:0.78rem;"><span id="lbl-humidity">💧 Humidity</span>: <span id="humidity" style="font-weight:bold;">--%</span></div>
+                    <div style="font-size:0.78rem;"><span id="lbl-rain">☔ Rain Prob</span>: <span id="val-rain" style="font-weight:bold; color:#e91e63;">Med</span></div>
                 </div>
             </div>
 
+            <!-- 屯馬綫卡片 -->
             <div class="card" style="flex-grow: 1;">
                 <div class="card-header">
-                    <div class="card-title">🚇 Tuen Ma Line - Siu Hong</div>
+                    <div class="card-title" id="tml-title">🚇 Tuen Ma Line - Siu Hong</div>
                     <span class="tag" style="background:#f3e5f5; color:#7b1fa2;">Live</span>
                 </div>
-                <div class="section-subtitle">Platform 1 - To Wu Kai Sha</div>
+                <div class="section-subtitle" id="tml-p1-title">Platform 1 - To Wu Kai Sha</div>
                 <div class="train-list" id="tml-up-list"><div style="font-size:0.78rem; color:#888;">Loading...</div></div>
-                <div class="section-subtitle" style="border-left-color: #673ab7; margin-top: 4px;">Platform 2 - To Tuen Mun</div>
+                <div class="section-subtitle" id="tml-p2-title" style="border-left-color: #673ab7; margin-top: 4px;">Platform 2 - To Tuen Mun</div>
                 <div class="train-list" id="tml-down-list"><div style="font-size:0.78rem; color:#888;">Loading...</div></div>
             </div>
         </div>
 
+        <!-- 輕鐵卡片 -->
         <div class="card" style="height: 100%;">
             <div class="card-header">
-                <div class="card-title">🚃 Light Rail Siu Hong (P2, 5, 6, 1)</div>
+                <div class="card-title" id="lr-title">🚃 Light Rail Siu Hong (P2, 5, 6, 1)</div>
                 <span class="tag" style="background:#fff3e0; color:#e65100;">ID: 100</span>
             </div>
             <div class="lr-grid" id="lr-container"><div style="font-size:0.8rem; color:#888;">Loading...</div></div>
@@ -262,6 +284,79 @@
     <script>
         window.onerror = function() { return true; };
 
+        var currentLang = 'EN'; // 'EN' 或 'ZH'
+
+        var i18n = {
+            EN: {
+                langBtn: "中文",
+                refreshBtn: "🔄 Refresh (30s)",
+                weatherTitle: "☀️ Tuen Mun Weather",
+                weatherLoc: "Tuen Mun",
+                humidity: "💧 Humidity",
+                rain: "☔ Rain Prob",
+                rainVal: "Med",
+                tmlTitle: "🚇 Tuen Ma Line - Siu Hong",
+                tmlP1: "Platform 1 - To Wu Kai Sha",
+                tmlP2: "Platform 2 - To Tuen Mun",
+                lrTitle: "🚃 Light Rail Siu Hong (P2, 5, 6, 1)",
+                platform: "Platform",
+                to: "To",
+                mins: "mins",
+                noTrain: "No train",
+                noDepartures: "No departures",
+                days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                dest: {
+                    "Wu Kai Sha": "Wu Kai Sha",
+                    "Tuen Mun": "Tuen Mun"
+                }
+            },
+            ZH: {
+                langBtn: "English",
+                refreshBtn: "🔄 更新 (30秒)",
+                weatherTitle: "☀️ 屯門天氣",
+                weatherLoc: "屯門",
+                humidity: "💧 相對濕度",
+                rain: "☔ 降雨概率",
+                rainVal: "中",
+                tmlTitle: "🚇 屯馬綫 - 兆康站",
+                tmlP1: "1號月台 - 往烏溪沙",
+                tmlP2: "2號月台 - 往屯門",
+                lrTitle: "🚃 輕鐵兆康站 (2, 5, 6, 1號月台)",
+                platform: "月台",
+                to: "往",
+                mins: "分鐘",
+                noTrain: "暫無列車",
+                noDepartures: "班次暫停",
+                days: ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'],
+                dest: {
+                    "Wu Kai Sha": "烏溪沙",
+                    "Tuen Mun": "屯門"
+                }
+            }
+        };
+
+        function toggleLanguage() {
+            currentLang = (currentLang === 'EN') ? 'ZH' : 'EN';
+            applyLanguage();
+            fetchData();
+        }
+
+        function applyLanguage() {
+            var t = i18n[currentLang];
+            document.getElementById('lang-btn').innerHTML = t.langBtn;
+            document.getElementById('refresh-btn').innerHTML = t.refreshBtn;
+            document.getElementById('weather-title').innerHTML = t.weatherTitle;
+            document.getElementById('weather-loc').innerHTML = t.weatherLoc;
+            document.getElementById('lbl-humidity').innerHTML = t.humidity;
+            document.getElementById('lbl-rain').innerHTML = t.rain;
+            document.getElementById('val-rain').innerHTML = t.rainVal;
+            document.getElementById('tml-title').innerHTML = t.tmlTitle;
+            document.getElementById('tml-p1-title').innerHTML = t.tmlP1;
+            document.getElementById('tml-p2-title').innerHTML = t.tmlP2;
+            document.getElementById('lr-title').innerHTML = t.lrTitle;
+            updateClock();
+        }
+
         function updateClock() {
             try {
                 var now = new Date();
@@ -270,7 +365,7 @@
                 m = m < 10 ? '0' + m : m;
                 s = s < 10 ? '0' + s : s;
                 document.getElementById('clock').innerHTML = h + ':' + m + ':' + s;
-                var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                var days = i18n[currentLang].days;
                 document.getElementById('date-str').innerHTML = (now.getMonth() + 1) + '/' + now.getDate() + ' (' + days[now.getDay()] + ')';
             } catch(e) {}
         }
@@ -293,11 +388,12 @@
         }
 
         function fetchWeather() {
-            httpGet('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=en', function(err, data) {
+            var langParam = (currentLang === 'ZH') ? 'tc' : 'en';
+            httpGet('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=' + langParam, function(err, data) {
                 if (err || !data) return;
                 if (data.temperature && data.temperature.data) {
                     for (var i = 0; i < data.temperature.data.length; i++) {
-                        if (data.temperature.data[i].place === "Tuen Mun") {
+                        if (data.temperature.data[i].place === "Tuen Mun" || data.temperature.data[i].place === "屯門") {
                             document.getElementById('tuen-mun-temp').innerHTML = data.temperature.data[i].value + '°';
                             break;
                         }
@@ -306,7 +402,7 @@
                 if (data.humidity && data.humidity.data && data.humidity.data[0]) {
                     document.getElementById('humidity').innerHTML = data.humidity.data[0].value + '%';
                 }
-                document.getElementById('weather-desc').innerHTML = "Mainly Cloudy";
+                document.getElementById('weather-desc').innerHTML = (currentLang === 'ZH') ? "大致多雲" : "Mainly Cloudy";
             });
         }
 
@@ -316,18 +412,20 @@
                 var sihData = data.data['TML-SIH'];
                 if (!sihData) return;
 
-                function renderList(list, elId, dirName) {
+                var t = i18n[currentLang];
+
+                function renderList(list, elId, dirKey) {
                     var el = document.getElementById(elId);
                     el.innerHTML = '';
+                    var dirName = t.dest[dirKey] || dirKey;
                     if (list && list.length > 0) {
-                        // 這裡改為 Math.min(list.length, 4) 顯示最多 4 班列車
                         for (var i = 0; i < Math.min(list.length, 4); i++) {
-                            var t = list[i];
-                            var timeStr = t.time ? t.time.split(' ')[1].substring(0, 5) : '';
-                            el.innerHTML += '<div class="train-item"><div><strong>To ' + dirName + '</strong> <span style="font-size:0.7rem; color:#666;">(' + timeStr + ')</span></div><div class="time-remaining">' + t.ttnt + ' mins</div></div>';
+                            var item = list[i];
+                            var timeStr = item.time ? item.time.split(' ')[1].substring(0, 5) : '';
+                            el.innerHTML += '<div class="train-item"><div><strong>' + t.to + ' ' + dirName + '</strong> <span style="font-size:0.7rem; color:#666;">(' + timeStr + ')</span></div><div class="time-remaining">' + item.ttnt + ' ' + t.mins + '</div></div>';
                         }
                     } else {
-                        el.innerHTML = '<div style="color:#888; font-size:0.78rem;">No train</div>';
+                        el.innerHTML = '<div style="color:#888; font-size:0.78rem;">' + t.noTrain + '</div>';
                     }
                 }
                 renderList(sihData.UP, 'tml-up-list', 'Wu Kai Sha');
@@ -341,6 +439,7 @@
                 var container = document.getElementById('lr-container');
                 container.innerHTML = ''; 
                 var targetPlatforms = [2, 5, 6, 1];
+                var t = i18n[currentLang];
 
                 for (var i = 0; i < targetPlatforms.length; i++) {
                     var pId = targetPlatforms[i];
@@ -355,13 +454,15 @@
                     if (pf && pf.route_list && pf.route_list.length > 0) {
                         for (var k = 0; k < pf.route_list.length; k++) {
                             var train = pf.route_list[k];
-                            trainsHTML += '<div class="train-sub-item"><div><span class="route-badge">' + train.route_no + '</span><strong>To ' + train.dest_en + '</strong></div><div class="time-remaining">' + train.time_en + '</div></div>';
+                            var destName = (currentLang === 'ZH' && train.dest_ch) ? train.dest_ch : train.dest_en;
+                            var timeVal = (currentLang === 'ZH' && train.time_ch) ? train.time_ch : train.time_en;
+                            trainsHTML += '<div class="train-sub-item"><div><span class="route-badge">' + train.route_no + '</span><strong>' + t.to + ' ' + destName + '</strong></div><div class="time-remaining">' + timeVal + '</div></div>';
                         }
                     } else {
-                        trainsHTML = '<div style="color:#aaa; font-size:0.75rem; padding:2px 0;">No departures</div>';
+                        trainsHTML = '<div style="color:#aaa; font-size:0.75rem; padding:2px 0;">' + t.noDepartures + '</div>';
                     }
 
-                    container.innerHTML += '<div class="light-rail-platform-card"><div style="font-weight:bold; font-size:0.78rem;"><span class="platform-badge">Platform ' + pId + '</span></div>' + trainsHTML + '</div>';
+                    container.innerHTML += '<div class="light-rail-platform-card"><div style="font-weight:bold; font-size:0.78rem;"><span class="platform-badge">' + pId + ' ' + t.platform + '</span></div>' + trainsHTML + '</div>';
                 }
             });
         }
