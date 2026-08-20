@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tuen Mun Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #fdf6f0;
+            --card-bg: #ffffff;
+            --text-dark: #333333;
+            --text-gray: #666666;
+            --accent-blue: #0088cc;
+            --accent-green: #2e7d32;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            padding: 10px;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        header {
+            background: var(--card-bg);
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            flex-shrink: 0;
+        }
+
+        .time-display {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--accent-blue);
+        }
+
+        .date-display {
+            font-size: 1rem;
+            color: #e91e63;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .btn-refresh {
+            background: #ffeb3b;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 10px;
+            flex-grow: 1;
+            height: calc(100vh - 65px);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 10px 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            border: 1.5px solid #fff5f5;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1.5px dashed #f0f0f0;
+            padding-bottom: 4px;
+            flex-shrink: 0;
+        }
+
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: bold;
+        }
+
+        .tag {
+            font-size: 0.75rem;
+            padding: 1px 6px;
+            border-radius: 8px;
+        }
+
+        .weather-main {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .temp-large {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #ff9800;
+        }
+
+        .weather-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            background: #f9f9f9;
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        .section-subtitle {
+            font-size: 0.82rem;
+            font-weight: bold;
+            color: #555;
+            padding-left: 4px;
+            border-left: 3px solid #9c27b0;
+            margin-top: 2px;
+        }
+
+        .train-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .train-item {
+            background: #f8f9fa;
+            border-left: 4px solid #9c27b0;
+            border-radius: 6px;
+            padding: 4px 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.82rem;
+        }
+
+        .lr-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .light-rail-platform-card {
+            background: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .platform-badge {
+            background: #ff9800;
+            color: white;
+            font-weight: bold;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+        }
+
+        .route-badge {
+            background: #009688;
+            color: white;
+            font-weight: bold;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            margin-right: 3px;
+        }
+
+        .train-sub-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.78rem;
+            padding: 2px 0;
+            border-bottom: 1px dotted #e0e0e0;
+        }
+
+        .time-remaining {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: var(--accent-green);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <span class="time-display" id="clock">--:--:--</span>
+            <span class="date-display" id="date-str">--/--</span>
+        </div>
+        <button class="btn-refresh" onclick="fetchData()">🔄 Refresh (30s)</button>
+    </header>
+
+    <div class="dashboard-grid">
+        <div style="display: flex; flex-direction: column; gap: 8px; height: 100%;">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">☀️ Tuen Mun Weather</div>
+                    <span class="tag" style="background:#ffe4e8; color:#d81b60;">HKO Live</span>
+                </div>
+                <div class="weather-main">
+                    <div>
+                        <h2 style="font-size: 1rem;">Tuen Mun</h2>
+                        <p style="color: var(--text-gray); font-size: 0.78rem;" id="weather-desc">Loading...</p>
+                    </div>
+                    <div class="temp-large" id="tuen-mun-temp">--°</div>
+                </div>
+                <div class="weather-details">
+                    <div style="font-size:0.78rem;">💧 Humidity: <span id="humidity" style="font-weight:bold;">--%</span></div>
+                    <div style="font-size:0.78rem;">☔ Rain Prob: <span style="font-weight:bold; color:#e91e63;">Med</span></div>
+                </div>
+            </div>
+
+            <div class="card" style="flex-grow: 1;">
+                <div class="card-header">
+                    <div class="card-title">🚇 Tuen Ma Line - Siu Hong</div>
+                    <span class="tag" style="background:#f3e5f5; color:#7b1fa2;">Live</span>
+                </div>
+                <div class="section-subtitle">Platform 1 - To Wu Kai Sha</div>
+                <div class="train-list" id="tml-up-list"><div style="font-size:0.78rem; color:#888;">Loading...</div></div>
+                <div class="section-subtitle" style="border-left-color: #673ab7; margin-top: 4px;">Platform 2 - To Tuen Mun</div>
+                <div class="train-list" id="tml-down-list"><div style="font-size:0.78rem; color:#888;">Loading...</div></div>
+            </div>
+        </div>
+
+        <div class="card" style="height: 100%;">
+            <div class="card-header">
+                <div class="card-title">🚃 Light Rail Siu Hong (P2, 5, 6, 1)</div>
+                <span class="tag" style="background:#fff3e0; color:#e65100;">ID: 100</span>
+            </div>
+            <div class="lr-grid" id="lr-container"><div style="font-size:0.8rem; color:#888;">Loading...</div></div>
+        </div>
+    </div>
+
+    <script>
+        window.onerror = function() { return true; };
+
+        function updateClock() {
+            try {
+                var now = new Date();
+                var h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+                h = h < 10 ? '0' + h : h;
+                m = m < 10 ? '0' + m : m;
+                s = s < 10 ? '0' + s : s;
+                document.getElementById('clock').innerHTML = h + ':' + m + ':' + s;
+                var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                document.getElementById('date-str').innerHTML = (now.getMonth() + 1) + '/' + now.getDate() + ' (' + days[now.getDay()] + ')';
+            } catch(e) {}
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        function httpGet(url, cb) {
+            try {
+                var xhr = new XMLHttpRequest();
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200) {
+                            try { cb(null, JSON.parse(xhr.responseText)); } catch(e) { cb(e); }
+                        } else { cb('err'); }
+                    }
+                };
+                xhr.open('GET', url, true);
+                xhr.send();
+            } catch(e) { cb(e); }
+        }
+
+        function fetchWeather() {
+            httpGet('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=en', function(err, data) {
+                if (err || !data) return;
+                if (data.temperature && data.temperature.data) {
+                    for (var i = 0; i < data.temperature.data.length; i++) {
+                        if (data.temperature.data[i].place === "Tuen Mun") {
+                            document.getElementById('tuen-mun-temp').innerHTML = data.temperature.data[i].value + '°';
+                            break;
+                        }
+                    }
+                }
+                if (data.humidity && data.humidity.data && data.humidity.data[0]) {
+                    document.getElementById('humidity').innerHTML = data.humidity.data[0].value + '%';
+                }
+                document.getElementById('weather-desc').innerHTML = "Mainly Cloudy";
+            });
+        }
+
+        function fetchTML() {
+            httpGet('https://rt.data.gov.hk/v1/transport/mtr/getSchedule.php?line=TML&sta=SIH', function(err, data) {
+                if (err || !data || data.status !== 1) return;
+                var sihData = data.data['TML-SIH'];
+                if (!sihData) return;
+
+                function renderList(list, elId, dirName) {
+                    var el = document.getElementById(elId);
+                    el.innerHTML = '';
+                    if (list && list.length > 0) {
+                        for (var i = 0; i < Math.min(list.length, 3); i++) {
+                            var t = list[i];
+                            var timeStr = t.time ? t.time.split(' ')[1].substring(0, 5) : '';
+                            el.innerHTML += '<div class="train-item"><div><strong>To ' + dirName + '</strong> <span style="font-size:0.7rem; color:#666;">(' + timeStr + ')</span></div><div class="time-remaining">' + t.ttnt + ' mins</div></div>';
+                        }
+                    } else {
+                        el.innerHTML = '<div style="color:#888; font-size:0.78rem;">No train</div>';
+                    }
+                }
+                renderList(sihData.UP, 'tml-up-list', 'Wu Kai Sha');
+                renderList(sihData.DOWN, 'tml-down-list', 'Tuen Mun');
+            });
+        }
+
+        function fetchLightRail() {
+            httpGet('https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=100', function(err, data) {
+                if (err || !data || data.status !== 1) return;
+                var container = document.getElementById('lr-container');
+                container.innerHTML = ''; 
+                var targetPlatforms = [2, 5, 6, 1];
+
+                for (var i = 0; i < targetPlatforms.length; i++) {
+                    var pId = targetPlatforms[i];
+                    var pf = null;
+                    if (data.platform_list) {
+                        for (var j = 0; j < data.platform_list.length; j++) {
+                            if (data.platform_list[j].platform_id === pId) { pf = data.platform_list[j]; break; }
+                        }
+                    }
+
+                    var trainsHTML = '';
+                    if (pf && pf.route_list && pf.route_list.length > 0) {
+                        for (var k = 0; k < pf.route_list.length; k++) {
+                            var train = pf.route_list[k];
+                            trainsHTML += '<div class="train-sub-item"><div><span class="route-badge">' + train.route_no + '</span><strong>To ' + train.dest_en + '</strong></div><div class="time-remaining">' + train.time_en + '</div></div>';
+                        }
+                    } else {
+                        trainsHTML = '<div style="color:#aaa; font-size:0.75rem; padding:2px 0;">No departures</div>';
+                    }
+
+                    container.innerHTML += '<div class="light-rail-platform-card"><div style="font-weight:bold; font-size:0.78rem;"><span class="platform-badge">Platform ' + pId + '</span></div>' + trainsHTML + '</div>';
+                }
+            });
+        }
+
+        function fetchData() {
+            fetchWeather();
+            fetchTML();
+            fetchLightRail();
+        }
+
+        fetchData();
+        setInterval(fetchData, 30000);
+    </script>
+</body>
+</html>
